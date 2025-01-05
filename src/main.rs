@@ -9,6 +9,12 @@ mod triangles;
 use triangles::*;
 
 fn main() {
+    let triangle = Triangle2D::new(
+        Point2D::new(0.25, 0.75),
+        Point2D::new(0.5, 0.25),
+        Point2D::new(0.75, 0.75)
+    );
+
     let event_loop = EventLoop::new().unwrap();
 
     let mut app = winit_app::WinitAppBuilder::with_init(
@@ -43,22 +49,19 @@ fn main() {
                     )
                     .unwrap();
 
-                let triangle = Triangle2D::new(
-                    Point2D::new(0.25, 0.75),
-                    Point2D::new(0.5, 0.25),
-                    Point2D::new(0.75, 0.75)
-                );
+
+                let (tri_x_range, tri_y_range) = triangle.get_bounding_box_px(width, height);
 
                 let mut buffer = surface.buffer_mut().unwrap();
 
-                for y in 0..height {
-                    for x in 0..width {
+                for y in tri_y_range {
+                    for x in tri_x_range.clone() {
                         let index = (x + y * width) as usize;
                         let x = (x as f32) / (width as f32);
                         let y = (y as f32) / (height as f32);
                         let p = Point2D::new(x, y);
 
-                        buffer[index] = if triangle.contains_point(p) { 0xFFFFFF } else { 0 };
+                        buffer[index] = if triangle.contains_point(p) { 0xFFFFFF } else { 0x000000 };
                     }
                 }
 
