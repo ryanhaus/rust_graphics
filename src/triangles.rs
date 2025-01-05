@@ -62,4 +62,40 @@ impl Triangle2D {
         
         (min_x..max_x, min_y..max_y)
     }
+
+    // paints the triangle into a PaintBuffer object
+    pub fn paint_to_buffer(&self, buffer: &mut PaintBuffer, paint_value: u32) {
+        // get bounding box of triangle in this buffer
+        let (range_x, range_y) = self.get_bounding_box_px(buffer.width, buffer.height);
+
+        // paint all points in the triangle
+        for y in range_y {
+            for x in range_x.clone() {
+                let index = (x + y * buffer.width) as usize;
+                let x = (x as f32) / (buffer.width as f32);
+                let y = (y as f32) / (buffer.height as f32);
+                let p = Point2D::new(x, y);
+
+                buffer.pixel_buffer[index] = if self.contains_point(p) { paint_value } else { 0x000000 };
+            }
+        }
+    }
+}
+
+pub struct PaintBuffer {
+    pub width: u32,
+    pub height: u32,
+    pub pixel_buffer: Vec<u32>,
+}
+
+impl PaintBuffer {
+    pub fn new(width: u32, height: u32) -> Self {
+        let buffer_size = (width * height) as usize;
+
+        Self {
+            width,
+            height,
+            pixel_buffer: vec![0; buffer_size],
+        }
+    }
 }

@@ -50,20 +50,15 @@ fn main() {
                     .unwrap();
 
 
-                let (tri_x_range, tri_y_range) = triangle.get_bounding_box_px(width, height);
-
                 let mut buffer = surface.buffer_mut().unwrap();
 
-                for y in tri_y_range {
-                    for x in tri_x_range.clone() {
-                        let index = (x + y * width) as usize;
-                        let x = (x as f32) / (width as f32);
-                        let y = (y as f32) / (height as f32);
-                        let p = Point2D::new(x, y);
+                let mut paint_buffer = PaintBuffer::new(width, height);
+                triangle.paint_to_buffer(&mut paint_buffer, 0xFF0000);
 
-                        buffer[index] = if triangle.contains_point(p) { 0xFFFFFF } else { 0x000000 };
-                    }
-                }
+                paint_buffer.pixel_buffer
+                    .iter()
+                    .enumerate()
+                    .for_each(|(index, &value)| buffer[index] = value);
 
                 buffer.present().unwrap();
             }
