@@ -2,8 +2,8 @@ use std::{cmp, ops::Range};
 
 #[derive(Clone, Copy, Debug)]
 pub struct Point2D {
-    x: f32,
-    y: f32,
+    pub x: f32,
+    pub y: f32,
 }
 
 impl Point2D {
@@ -14,9 +14,9 @@ impl Point2D {
 
 #[derive(Debug)]
 pub struct Triangle2D {
-    a: Point2D,
-    b: Point2D,
-    c: Point2D,
+    pub a: Point2D,
+    pub b: Point2D,
+    pub c: Point2D,
 }
 
 impl Triangle2D {
@@ -43,10 +43,10 @@ impl Triangle2D {
 
     // returns two Ranges indicating the 'bounding box' of the triangle
     pub fn get_bounding_box(&self) -> (Range<f32>, Range<f32>) {
-        let min_x = f32::min(f32::min(self.a.x, self.b.x), self.c.x);
-        let max_x = f32::max(f32::max(self.a.x, self.b.x), self.c.x);
-        let min_y = f32::min(f32::min(self.a.y, self.b.y), self.c.y);
-        let max_y = f32::max(f32::max(self.a.y, self.b.y), self.c.y);
+        let min_x = f32::min(1.0, f32::min(f32::min(self.a.x, self.b.x), self.c.x));
+        let max_x = f32::max(0.0, f32::max(f32::max(self.a.x, self.b.x), self.c.x));
+        let min_y = f32::min(0.0, f32::min(f32::min(self.a.y, self.b.y), self.c.y));
+        let max_y = f32::max(0.0, f32::max(f32::max(self.a.y, self.b.y), self.c.y));
 
         (min_x..max_x, min_y..max_y)
     }
