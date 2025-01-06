@@ -82,6 +82,46 @@ impl Triangle2D {
     }
 }
 
+pub struct Point3D {
+    pub x: f32,
+    pub y: f32,
+    pub z: f32,
+}
+
+impl Point3D {
+    pub fn new(x: f32, y: f32, z: f32) -> Self {
+        Self { x, y, z }
+    }
+
+    pub fn project_to_2d(&self) -> Point2D {
+        // TODO: use FOV
+        Point2D::new(
+            self.x / self.z,
+            self.y / self.z,
+        )
+    }
+}
+
+pub struct Triangle3D {
+    pub a: Point3D,
+    pub b: Point3D,
+    pub c: Point3D,
+}
+
+impl Triangle3D {
+    pub fn new(a: Point3D, b: Point3D, c: Point3D) -> Self {
+        Triangle3D { a, b, c }
+    }
+
+    pub fn project_to_2d(&self) -> Triangle2D {
+        Triangle2D::new(
+            self.a.project_to_2d(),
+            self.b.project_to_2d(),
+            self.c.project_to_2d(),
+        )
+    }
+}
+
 pub struct PaintBuffer {
     pub width: u32,
     pub height: u32,

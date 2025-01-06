@@ -3,16 +3,18 @@ use std::rc::Rc;
 use winit::event::{Event, WindowEvent};
 use winit::event_loop::{ControlFlow, EventLoop};
 use winit::window::Window;
+use std::time::{Instant, Duration};
 
 mod winit_app;
 mod triangles;
 use triangles::*;
 
 fn main() {
-    let mut triangle = Triangle2D::new(
-        Point2D::new(0.25, 0.75),
-        Point2D::new(0.5, 0.25),
-        Point2D::new(0.75, 0.75)
+    let start = Instant::now();
+    let mut triangle = Triangle3D::new(
+        Point3D::new(-0.5, 0.5, 1.0),
+        Point3D::new(0.0, -0.5, 1.0,),
+        Point3D::new(0.5, 0.5, 1.0),
     );
 
     let mut counter: f32 = 0.0;
@@ -59,11 +61,13 @@ fn main() {
 
                     let mut buffer = surface.buffer_mut().unwrap();
 
-                    counter += 0.05;
-                    triangle.b.y = 0.25 + 0.1 * counter.sin();
+                    counter = 5.0 * (start.elapsed().as_millis() as f32) / 1000.0;
+                    triangle.a.z = 2.0 + counter.sin();
+                    triangle.b.z = 2.0 + counter.sin();
+                    triangle.c.z = 2.0 + counter.sin();
 
                     let mut paint_buffer = PaintBuffer::new(width, height);
-                    triangle.paint_to_buffer(&mut paint_buffer, 0xFF0000);
+                    triangle.project_to_2d().paint_to_buffer(&mut paint_buffer, 0xFF0000);
 
 
                     if buffer.len() == paint_buffer.pixel_buffer.len() {
