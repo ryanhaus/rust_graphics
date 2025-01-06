@@ -1,9 +1,13 @@
+use std::fs::File;
+use std::io::BufReader;
 use std::num::NonZeroU32;
 use std::rc::Rc;
+use obj::{load_obj, Obj};
 use winit::event::{Event, WindowEvent};
 use winit::event_loop::{ControlFlow, EventLoop};
 use winit::window::Window;
 use std::time::{Instant, Duration};
+use rand::Rng;
 
 mod winit_app;
 mod triangles;
@@ -11,21 +15,24 @@ use triangles::*;
 
 fn main() {
     let start = Instant::now();
-    let mut triangle = Triangle3D::new(
-        Point3D::new(-0.5, 0.5, 1.0),
-        Point3D::new(0.0, -0.5, 1.0),
-        Point3D::new(0.5, 0.5, 1.0),
-    );
 
-    let triangle2 = Triangle3D::new(
-        Point3D::new(-0.5, 0.5, 1.5),
-        Point3D::new(0.0, -0.5, 1.5),
-        Point3D::new(0.5, 0.5, 1.5),
-    );
+    let obj_input = BufReader::new(File::open("res/gordon_freeman.obj").unwrap());
+    let model: Obj = load_obj(obj_input).unwrap();
 
-    let camera = Camera::new(Point3D::new(0.0, 0.0, -1.0));
+    let vertices = model.vertices
+        .into_iter()
+        .map(|v| Point3D::new(v.position[0], v.position[1], v.position[2]))
+        .collect::<Vec::<Point3D>>();
 
-    let mut counter: f32 = 0.0;
+    let triangles = model.indices
+        .chunks(3)
+        .map(|indices| (indices[0] as usize, indices[1] as usize, indices[2] as usize))
+        .map(|(a, b, c)| (vertices[a], vertices[b], vertices[c]))
+        .map(|(a, b, c)| Triangle3D::new(a, b, c))
+        .map(|tri| ColorTriangle::new(rand::thread_rng().gen_range(0..0xFFFFFF), tri))
+        .collect::<Vec<ColorTriangle>>();
+
+    let camera = Camera::new(Point3D::new(0.0, 0.0, -2.0));
 
     let event_loop = EventLoop::new().unwrap();
 
@@ -69,15 +76,10 @@ fn main() {
 
                     let mut buffer = surface.buffer_mut().unwrap();
 
-                    counter = (start.elapsed().as_millis() as f32) / 1000.0;
-                    // triangle.a.z = 2.0 + counter.sin();
-                    // triangle.b.z = 2.0 + counter.sin();
-                    triangle.c.z = 2.0 + counter.sin();
+                    let time = (start.elapsed().as_millis() as f32) / 1000.0;
 
                     let mut paint_buffer = PaintBuffer::new(width, height);
-                    triangle.paint_to_buffer(&mut paint_buffer, camera, 0xFF0000);
-                    triangle2.paint_to_buffer(&mut paint_buffer, camera, 0x0000FF);
-
+                    triangles.clone().into_iter().for_each(|tri| tri.paint_to_buffer(&mut paint_buffer, camera));
 
                     if buffer.len() == paint_buffer.pixel_buffer.len() {
                         buffer.copy_from_slice(&paint_buffer.pixel_buffer);

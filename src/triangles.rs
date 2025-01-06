@@ -16,7 +16,7 @@ impl Point2D {
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Copy, Debug)]
 pub struct Triangle2D {
     pub a: Point2D,
     pub b: Point2D,
@@ -50,7 +50,7 @@ impl Triangle2D {
         let bcp = Triangle2D::edge_function(self.b, self.c, p);
         let cap = Triangle2D::edge_function(self.c, self.a, p);
 
-        abp.is_sign_positive() && bcp.is_sign_positive() && cap.is_sign_positive()
+        abp >= 0.0 && bcp >= 0.0 && cap >= 0.0
     }
 
     // gets the 'weights' of each point (a,b,c) at a given point
@@ -138,7 +138,7 @@ impl Point3D {
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Copy, Debug)]
 pub struct Triangle3D {
     pub a: Point3D,
     pub b: Point3D,
@@ -167,7 +167,10 @@ impl Triangle3D {
     }
 
     pub fn paint_to_buffer(&self, buffer: &mut PaintBuffer, camera: Camera, paint_value: u32) {
-        let translated_triangle = self.translated_by(camera.get_translating_point());
+        let mut translated_triangle = self.translated_by(camera.get_translating_point());
+        translated_triangle.a.y *= -1.0;
+        translated_triangle.b.y *= -1.0;
+        translated_triangle.c.y *= -1.0;
         let projected_triangle = translated_triangle.project_to_2d();
         let projected_triangle = projected_triangle.translated_by(Point2D::new(0.5, 0.5));
         let (range_x, range_y) = projected_triangle.get_bounding_box_px(buffer.width, buffer.height);
@@ -176,6 +179,10 @@ impl Triangle3D {
         for y in range_y {
             for x in range_x.clone() {
                 let index = (x + y * buffer.width) as usize;
+
+                if index >= buffer.pixel_buffer.len() {
+                    continue;
+                }
 
                 let x = (x as f32) / (buffer.width as f32);
                 let y = (y as f32) / (buffer.height as f32);
@@ -192,6 +199,22 @@ impl Triangle3D {
                 }
             }
         }
+    }
+}
+
+#[derive(Clone, Copy, Debug)]
+pub struct ColorTriangle {
+    pub color: u32,
+    pub tri: Triangle3D,
+}
+
+impl ColorTriangle {
+    pub fn new(color: u32, tri: Triangle3D) -> Self {
+        ColorTriangle { color, tri }
+    }
+
+    pub fn paint_to_buffer(&self, buffer: &mut PaintBuffer, camera: Camera) {
+        self.tri.paint_to_buffer(buffer, camera, self.color);
     }
 }
 
