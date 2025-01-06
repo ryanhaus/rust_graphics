@@ -46,11 +46,10 @@ impl Triangle2D {
     // see https://jtsorlinis.github.io/rendering-tutorial/
     // checks whether or not a point is inside the triangle
     pub fn contains_point(&self, p: Point2D) -> bool {
-        let abp = Triangle2D::edge_function(self.a, self.b, p);
-        let bcp = Triangle2D::edge_function(self.b, self.c, p);
-        let cap = Triangle2D::edge_function(self.c, self.a, p);
+        let (weight_a, weight_b, weight_c) = self.get_weights_at(p);
 
-        abp >= 0.0 && bcp >= 0.0 && cap >= 0.0
+        let threshold = -0.075;
+        weight_a >= threshold && weight_b >= threshold && weight_c >= threshold
     }
 
     // gets the 'weights' of each point (a,b,c) at a given point
@@ -181,7 +180,6 @@ impl Triangle3D {
         let projected_triangle = translated_triangle.project_to_2d();
         let projected_triangle = projected_triangle.translated_by(Point2D::new(0.5, 0.5));
         let (range_x, range_y) = projected_triangle.get_bounding_box_px(buffer.width, buffer.height);
-
 
         for y in range_y {
             for x in range_x.clone() {
