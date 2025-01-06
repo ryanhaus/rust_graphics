@@ -33,7 +33,7 @@ fn main() {
         .collect::<Vec<ColorTriangle>>();
 
     let camera = Camera::new(Point3D::new(0.0, 0.0, -2.0));
-    let light = Light::new(Point3D::new(-0.5,-0.5,-0.5));
+    let light = Light::new(Point3D::new(0.0, 0.3, -0.5));
     let scene = Scene::new(camera, light);
 
     let event_loop = EventLoop::new().unwrap();

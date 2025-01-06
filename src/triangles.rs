@@ -136,6 +136,12 @@ impl Point3D {
             self.y / self.z,
         )
     }
+
+    pub fn normalized(&self) -> Self {
+        let magnitude = (self.x * self.x + self.y * self.y + self.z * self.z).sqrt();
+
+        Point3D::new(self.x / magnitude, self.y / magnitude, self.z / magnitude)
+    }
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -219,12 +225,31 @@ impl ColorTriangle {
         let Scene(camera, light) = scene;
 
         self.tri.paint_to_buffer(buffer, scene, |weight_a, weight_b, weight_c| {
-            let brightness_a = light.direction.x * self.normal_tri.a.x + light.direction.y * self.normal_tri.a.y + light.direction.z * self.normal_tri.a.z;
-            let brightness_b = light.direction.x * self.normal_tri.b.x + light.direction.y * self.normal_tri.b.y + light.direction.z * self.normal_tri.b.z;
-            let brightness_c = light.direction.x * self.normal_tri.c.x + light.direction.y * self.normal_tri.c.y + light.direction.z * self.normal_tri.c.z;
+            let light_dir_a = Point3D::new(
+                -self.tri.a.x + light.position.x,
+                -self.tri.a.y + light.position.y,
+                -self.tri.a.z + light.position.z,
+            ).normalized();
+
+            let light_dir_b = Point3D::new(
+                -self.tri.b.x + light.position.x,
+                -self.tri.b.y + light.position.y,
+                -self.tri.b.z + light.position.z,
+            ).normalized();
+
+            let light_dir_c = Point3D::new(
+                -self.tri.c.x + light.position.x,
+                -self.tri.c.y + light.position.y,
+                -self.tri.c.z + light.position.z,
+            ).normalized();
+            
+            let brightness_a = light_dir_a.x * self.normal_tri.a.x + light_dir_a.y * self.normal_tri.a.y + light_dir_a.z * self.normal_tri.a.z;
+            let brightness_b = light_dir_b.x * self.normal_tri.b.x + light_dir_b.y * self.normal_tri.b.y + light_dir_b.z * self.normal_tri.b.z;
+            let brightness_c = light_dir_c.x * self.normal_tri.c.x + light_dir_c.y * self.normal_tri.c.y + light_dir_c.z * self.normal_tri.c.z;
 
             let brightness = brightness_a * weight_a + brightness_b * weight_b + brightness_c * weight_c;
-            let brightness = f32::max(0.1, brightness);
+            let brightness = brightness + 0.15;
+            let brightness = f32::clamp(brightness, 0.0, 1.0);
 
             let brightness = (brightness * 255.0) as u32;
             (brightness << 16) | (brightness << 8) | brightness
@@ -270,13 +295,13 @@ impl Camera {
 
 #[derive(Clone, Copy, Debug)]
 pub struct Light {
-    direction: Point3D,
+    position: Point3D,
     // TODO: color?
 }
 
 impl Light {
-    pub fn new(direction: Point3D) -> Self {
-        Self { direction }
+    pub fn new(position: Point3D) -> Self {
+        Self { position }
     }
 }
 
