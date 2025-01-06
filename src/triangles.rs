@@ -41,6 +41,20 @@ impl Triangle2D {
         abp.is_sign_positive() && bcp.is_sign_positive() && cap.is_sign_positive()
     }
 
+    // gets the 'weights' of each point (a,b,c) at a given point
+    pub fn get_weights_at(&self, p: Point2D) -> (f32, f32, f32) {
+        let abc = Triangle2D::edge_function(self.a, self.b, self.c);
+        let abp = Triangle2D::edge_function(self.a, self.b, p);
+        let bcp = Triangle2D::edge_function(self.b, self.c, p);
+        let cap = Triangle2D::edge_function(self.c, self.a, p);
+
+        let weight_a = bcp / abc;
+        let weight_b = cap / abc;
+        let weight_c = abp / abc;
+
+        (weight_a, weight_b, weight_c)
+    }
+
     // returns two Ranges indicating the 'bounding box' of the triangle
     pub fn get_bounding_box(&self) -> (Range<f32>, Range<f32>) {
         let min_x = f32::min(1.0, f32::min(f32::min(self.a.x, self.b.x), self.c.x));
@@ -120,11 +134,36 @@ impl Triangle3D {
             self.c.project_to_2d(),
         )
     }
+
+    pub fn paint_to_buffer(&self, buffer: &mut PaintBuffer, paint_value: u32) {
+        let projected_triangle = self.project_to_2d();
+        let (range_x, range_y) = projected_triangle.get_bounding_box_px(buffer.width, buffer.height);
+
+        for y in range_y {
+            for x in range_x.clone() {
+                let index = (x + y * buffer.width) as usize;
+                let x = (x as f32) / (buffer.width as f32);
+                let y = (y as f32) / (buffer.height as f32);
+                let p = Point2D::new(x, y);
+
+                if projected_triangle.contains_point(p) {
+                    let (weight_a, weight_b, weight_c) = projected_triangle.get_weights_at(p);
+                    let z_val = self.a.z * weight_a + self.b.z * weight_b + self.c.z * weight_c;
+
+                    if z_val < buffer.z_buffer[index] {
+                        buffer.z_buffer[index] = z_val;
+                        buffer.pixel_buffer[index] = paint_value;
+                    }
+                }
+            }
+        }
+    }
 }
 
 pub struct PaintBuffer {
     pub width: u32,
     pub height: u32,
+    pub z_buffer: Vec<f32>,
     pub pixel_buffer: Vec<u32>,
 }
 
@@ -135,6 +174,7 @@ impl PaintBuffer {
         Self {
             width,
             height,
+            z_buffer: vec![f32::MAX; buffer_size],
             pixel_buffer: vec![0; buffer_size],
         }
     }

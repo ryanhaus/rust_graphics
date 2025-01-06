@@ -67,7 +67,7 @@ fn main() {
                     triangle.c.z = 2.0 + counter.sin();
 
                     let mut paint_buffer = PaintBuffer::new(width, height);
-                    triangle.project_to_2d().paint_to_buffer(&mut paint_buffer, 0xFF0000);
+                    triangle.paint_to_buffer(&mut paint_buffer, 0xFF0000);
 
 
                     if buffer.len() == paint_buffer.pixel_buffer.len() {
