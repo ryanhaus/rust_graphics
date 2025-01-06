@@ -10,6 +10,10 @@ impl Point2D {
     pub fn new(x: f32, y: f32) -> Self {
         Self { x, y }
     }
+
+    pub fn translated_by(&self, offset: Point2D) -> Self {
+        Point2D::new(self.x + offset.x, self.y + offset.y)
+    }
 }
 
 #[derive(Debug)]
@@ -22,6 +26,14 @@ pub struct Triangle2D {
 impl Triangle2D {
     pub fn new(a: Point2D, b: Point2D, c: Point2D) -> Self {
         Self { a, b, c }
+    }
+
+    pub fn translated_by(&self, offset: Point2D) -> Self {
+        Self {
+            a: self.a.translated_by(offset),
+            b: self.b.translated_by(offset),
+            c: self.c.translated_by(offset),
+        }
     }
 
     // see https://jtsorlinis.github.io/rendering-tutorial/
@@ -59,7 +71,7 @@ impl Triangle2D {
     pub fn get_bounding_box(&self) -> (Range<f32>, Range<f32>) {
         let min_x = f32::min(1.0, f32::min(f32::min(self.a.x, self.b.x), self.c.x));
         let max_x = f32::max(0.0, f32::max(f32::max(self.a.x, self.b.x), self.c.x));
-        let min_y = f32::min(0.0, f32::min(f32::min(self.a.y, self.b.y), self.c.y));
+        let min_y = f32::min(1.0, f32::min(f32::min(self.a.y, self.b.y), self.c.y));
         let max_y = f32::max(0.0, f32::max(f32::max(self.a.y, self.b.y), self.c.y));
 
         (min_x..max_x, min_y..max_y)
@@ -67,12 +79,17 @@ impl Triangle2D {
 
     // returns two Ranges indicating the 'bounding box' of the triangle in pixels
     pub fn get_bounding_box_px(&self, width: u32, height: u32) -> (Range<u32>, Range<u32>) {
-        let (x_range, y_range) = self.get_bounding_box();
-
-        let min_x = (x_range.start * (width as f32)) as u32;
-        let max_x = (x_range.end * (width as f32)) as u32;
-        let min_y = (y_range.start * (height as f32)) as u32;
-        let max_y = (y_range.end * (height as f32)) as u32;
+        let a_x_px = (self.a.x * (width as f32)) as u32;
+        let a_y_px = (self.a.y * (height as f32)) as u32;
+        let b_x_px = (self.b.x * (width as f32)) as u32;
+        let b_y_px = (self.b.y * (height as f32)) as u32;
+        let c_x_px = (self.c.x * (width as f32)) as u32;
+        let c_y_px = (self.c.y * (height as f32)) as u32;
+        
+        let min_x = cmp::min(width - 1, cmp::min(a_x_px, cmp::min(b_x_px, c_x_px)));
+        let max_x = cmp::max(0, cmp::max(a_x_px, cmp::max(b_x_px, c_x_px)));
+        let min_y = cmp::min(height - 1, cmp::min(a_y_px, cmp::min(b_y_px, c_y_px)));
+        let max_y = cmp::max(0, cmp::max(a_y_px, cmp::max(b_y_px, c_y_px)));
         
         (min_x..max_x, min_y..max_y)
     }
@@ -96,6 +113,7 @@ impl Triangle2D {
     }
 }
 
+#[derive(Clone, Copy, Debug)]
 pub struct Point3D {
     pub x: f32,
     pub y: f32,
@@ -107,6 +125,10 @@ impl Point3D {
         Self { x, y, z }
     }
 
+    pub fn translated_by(&self, offset: Point3D) -> Self {
+        Point3D::new(self.x + offset.x, self.y + offset.y, self.z + offset.z)
+    }
+
     pub fn project_to_2d(&self) -> Point2D {
         // TODO: use FOV
         Point2D::new(
@@ -116,6 +138,7 @@ impl Point3D {
     }
 }
 
+#[derive(Debug)]
 pub struct Triangle3D {
     pub a: Point3D,
     pub b: Point3D,
@@ -127,6 +150,14 @@ impl Triangle3D {
         Triangle3D { a, b, c }
     }
 
+    pub fn translated_by(&self, offset: Point3D) -> Self {
+        Self {
+            a: self.a.translated_by(offset),
+            b: self.b.translated_by(offset),
+            c: self.c.translated_by(offset),
+        }
+    }
+
     pub fn project_to_2d(&self) -> Triangle2D {
         Triangle2D::new(
             self.a.project_to_2d(),
@@ -135,13 +166,17 @@ impl Triangle3D {
         )
     }
 
-    pub fn paint_to_buffer(&self, buffer: &mut PaintBuffer, paint_value: u32) {
-        let projected_triangle = self.project_to_2d();
+    pub fn paint_to_buffer(&self, buffer: &mut PaintBuffer, camera: Camera, paint_value: u32) {
+        let translated_triangle = self.translated_by(camera.get_translating_point());
+        let projected_triangle = translated_triangle.project_to_2d();
+        let projected_triangle = projected_triangle.translated_by(Point2D::new(0.5, 0.5));
         let (range_x, range_y) = projected_triangle.get_bounding_box_px(buffer.width, buffer.height);
+
 
         for y in range_y {
             for x in range_x.clone() {
                 let index = (x + y * buffer.width) as usize;
+
                 let x = (x as f32) / (buffer.width as f32);
                 let y = (y as f32) / (buffer.height as f32);
                 let p = Point2D::new(x, y);
@@ -177,5 +212,21 @@ impl PaintBuffer {
             z_buffer: vec![f32::MAX; buffer_size],
             pixel_buffer: vec![0; buffer_size],
         }
+    }
+}
+
+#[derive(Clone, Copy, Debug)]
+pub struct Camera {
+    position: Point3D,
+    // TODO: make orientation of camera as well as FOV etc
+}
+
+impl Camera {
+    pub fn new(position: Point3D) -> Self {
+        Self { position }
+    }
+
+    pub fn get_translating_point(&self) -> Point3D {
+        Point3D::new(-self.position.x, -self.position.y, -self.position.z)
     }
 }
