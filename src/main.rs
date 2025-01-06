@@ -13,8 +13,14 @@ fn main() {
     let start = Instant::now();
     let mut triangle = Triangle3D::new(
         Point3D::new(-0.5, 0.5, 1.0),
-        Point3D::new(0.0, -0.5, 1.0,),
+        Point3D::new(0.0, -0.5, 1.0),
         Point3D::new(0.5, 0.5, 1.0),
+    );
+
+    let triangle2 = Triangle3D::new(
+        Point3D::new(-0.5, 0.5, 1.5),
+        Point3D::new(0.0, -0.5, 1.5),
+        Point3D::new(0.5, 0.5, 1.5),
     );
 
     let mut counter: f32 = 0.0;
@@ -61,13 +67,14 @@ fn main() {
 
                     let mut buffer = surface.buffer_mut().unwrap();
 
-                    counter = 5.0 * (start.elapsed().as_millis() as f32) / 1000.0;
-                    triangle.a.z = 2.0 + counter.sin();
-                    triangle.b.z = 2.0 + counter.sin();
+                    counter = 2.0 * (start.elapsed().as_millis() as f32) / 1000.0;
+                    // triangle.a.z = 2.0 + counter.sin();
+                    // triangle.b.z = 2.0 + counter.sin();
                     triangle.c.z = 2.0 + counter.sin();
 
                     let mut paint_buffer = PaintBuffer::new(width, height);
                     triangle.paint_to_buffer(&mut paint_buffer, 0xFF0000);
+                    triangle2.paint_to_buffer(&mut paint_buffer, 0x0000FF);
 
 
                     if buffer.len() == paint_buffer.pixel_buffer.len() {
