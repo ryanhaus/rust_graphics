@@ -48,8 +48,8 @@ impl Triangle2D {
     pub fn contains_point(&self, p: Point2D) -> bool {
         let (weight_a, weight_b, weight_c) = self.get_weights_at(p);
 
-        let area = Triangle2D::edge_function(self.a, self.b, self.c);
-        let threshold = -0.0;
+        let area = 0.5 * Triangle2D::edge_function(self.a, self.b, self.c);
+        let threshold = -0.0025 * 1.0 / area.sqrt();
         weight_a >= threshold && weight_b >= threshold && weight_c >= threshold
     }
 
