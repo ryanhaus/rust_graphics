@@ -166,7 +166,8 @@ impl Triangle3D {
         )
     }
 
-    pub fn paint_to_buffer(&self, buffer: &mut PaintBuffer, camera: Camera, paint_value: u32) {
+    pub fn paint_to_buffer<ColorF: Fn(f32, f32, f32) -> u32>(&self, buffer: &mut PaintBuffer, scene: Scene, color_f: ColorF) {
+        let Scene(camera, light) = scene;
         let mut translated_triangle = self.translated_by(camera.get_translating_point());
         translated_triangle.a.y *= -1.0;
         translated_triangle.b.y *= -1.0;
@@ -194,7 +195,7 @@ impl Triangle3D {
 
                     if z_val < buffer.z_buffer[index] {
                         buffer.z_buffer[index] = z_val;
-                        buffer.pixel_buffer[index] = paint_value;
+                        buffer.pixel_buffer[index] = color_f(weight_a, weight_b, weight_c);
                     }
                 }
             }
@@ -206,15 +207,28 @@ impl Triangle3D {
 pub struct ColorTriangle {
     pub color: u32,
     pub tri: Triangle3D,
+    pub normal_tri: Triangle3D,
 }
 
 impl ColorTriangle {
-    pub fn new(color: u32, tri: Triangle3D) -> Self {
-        ColorTriangle { color, tri }
+    pub fn new(color: u32, tri: Triangle3D, normal_tri: Triangle3D) -> Self {
+        ColorTriangle { color, tri, normal_tri }
     }
 
-    pub fn paint_to_buffer(&self, buffer: &mut PaintBuffer, camera: Camera) {
-        self.tri.paint_to_buffer(buffer, camera, self.color);
+    pub fn paint_to_buffer(&self, buffer: &mut PaintBuffer, scene: Scene) {
+        let Scene(camera, light) = scene;
+
+        self.tri.paint_to_buffer(buffer, scene, |weight_a, weight_b, weight_c| {
+            let brightness_a = light.direction.x * self.normal_tri.a.x + light.direction.y * self.normal_tri.a.y + light.direction.z * self.normal_tri.a.z;
+            let brightness_b = light.direction.x * self.normal_tri.b.x + light.direction.y * self.normal_tri.b.y + light.direction.z * self.normal_tri.b.z;
+            let brightness_c = light.direction.x * self.normal_tri.c.x + light.direction.y * self.normal_tri.c.y + light.direction.z * self.normal_tri.c.z;
+
+            let brightness = brightness_a * weight_a + brightness_b * weight_b + brightness_c * weight_c;
+            let brightness = f32::max(0.1, brightness);
+
+            let brightness = (brightness * 255.0) as u32;
+            (brightness << 16) | (brightness << 8) | brightness
+        });
     }
 }
 
@@ -251,5 +265,26 @@ impl Camera {
 
     pub fn get_translating_point(&self) -> Point3D {
         Point3D::new(-self.position.x, -self.position.y, -self.position.z)
+    }
+}
+
+#[derive(Clone, Copy, Debug)]
+pub struct Light {
+    direction: Point3D,
+    // TODO: color?
+}
+
+impl Light {
+    pub fn new(direction: Point3D) -> Self {
+        Self { direction }
+    }
+}
+
+#[derive(Clone, Copy, Debug)]
+pub struct Scene(Camera, Light);
+
+impl Scene {
+    pub fn new(camera: Camera, light: Light) -> Self {
+        Self(camera, light)
     }
 }
