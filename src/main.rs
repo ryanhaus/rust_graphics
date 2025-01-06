@@ -16,12 +16,12 @@ use triangles::*;
 fn main() {
     let start = Instant::now();
 
-    let obj_input = BufReader::new(File::open("res/gordon_freeman.obj").unwrap());
+    let obj_input = BufReader::new(File::open("res/dragon.obj").unwrap());
     let model: Obj = load_obj(obj_input).unwrap();
 
     let vertices = model.vertices
         .into_iter()
-        .map(|v| (Point3D::new(v.position[0], v.position[1], v.position[2]), Point3D::new(v.normal[0], v.normal[1], v.normal[2])))
+        .map(|v| (Point3D::new(v.position[0] as f64, v.position[1] as f64, v.position[2] as f64), Point3D::new(v.normal[0] as f64, v.normal[1] as f64, v.normal[2] as f64)))
         .collect::<Vec::<(Point3D, Point3D)>>();
 
     let triangles = model.indices
@@ -32,9 +32,8 @@ fn main() {
         .map(|(tri, normal_tri)| ColorTriangle::new(rand::thread_rng().gen_range(0..0xFFFFFF), tri, normal_tri))
         .collect::<Vec<ColorTriangle>>();
 
-    let camera = Camera::new(Point3D::new(0.0, 0.0, -2.0));
-    let light = Light::new(Point3D::new(0.0, 0.3, -0.5));
-    let scene = Scene::new(camera, light);
+    let camera = Camera::new(Point3D::new(0.0, 0.0, -4.0));
+    let mut light = Light::new(Point3D::new(0.0, 0.0, -0.0));
 
     let event_loop = EventLoop::new().unwrap();
 
@@ -78,7 +77,12 @@ fn main() {
 
                     let mut buffer = surface.buffer_mut().unwrap();
 
-                    let time = (start.elapsed().as_millis() as f32) / 1000.0;
+                    let time = (start.elapsed().as_millis() as f64) / 1000.0;
+                    light.position.x = time.cos();
+                    light.position.y = 0.5;
+                    light.position.z = time.sin();
+
+                    let scene = Scene::new(camera, light);
 
                     let mut paint_buffer = PaintBuffer::new(width, height);
                     triangles.clone().into_iter().for_each(|tri| tri.paint_to_buffer(&mut paint_buffer, scene));
