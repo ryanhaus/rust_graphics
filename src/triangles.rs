@@ -53,8 +53,7 @@ impl Triangle2D {
         let (weight_a, weight_b, weight_c) = self.get_weights_at(p);
 
         let area = 0.5 * Triangle2D::edge_function(self.a, self.b, self.c);
-        let threshold = -0.0025 * 1.0 / area.sqrt();
-        weight_a >= threshold && weight_b >= threshold && weight_c >= threshold
+        weight_a >= 0.0 && weight_b >= 0.0 && weight_c >= 0.0
     }
 
     // gets the 'weights' of each point (a,b,c) at a given point
@@ -83,17 +82,12 @@ impl Triangle2D {
 
     // returns two Ranges indicating the 'bounding box' of the triangle in pixels
     pub fn get_bounding_box_px(&self, width: u32, height: u32) -> (Range<u32>, Range<u32>) {
-        let a_x_px = (self.a.x * (width as f64)) as u32;
-        let a_y_px = (self.a.y * (height as f64)) as u32;
-        let b_x_px = (self.b.x * (width as f64)) as u32;
-        let b_y_px = (self.b.y * (height as f64)) as u32;
-        let c_x_px = (self.c.x * (width as f64)) as u32;
-        let c_y_px = (self.c.y * (height as f64)) as u32;
-        
-        let min_x = cmp::min(width - 1, cmp::min(a_x_px, cmp::min(b_x_px, c_x_px)));
-        let max_x = cmp::max(0, cmp::max(a_x_px, cmp::max(b_x_px, c_x_px)));
-        let min_y = cmp::min(height - 1, cmp::min(a_y_px, cmp::min(b_y_px, c_y_px)));
-        let max_y = cmp::max(0, cmp::max(a_y_px, cmp::max(b_y_px, c_y_px)));
+        let (x_range, y_range) = self.get_bounding_box();
+
+        let min_x = (x_range.start * width as f64).floor() as u32;
+        let max_x = (x_range.end * width as f64).ceil() as u32;
+        let min_y = (y_range.start * height as f64).floor() as u32;
+        let max_y = (y_range.end * height as f64).ceil() as u32;
         
         (min_x..max_x, min_y..max_y)
     }
