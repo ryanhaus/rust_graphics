@@ -32,8 +32,10 @@ fn main() {
         .map(|(tri, normal_tri)| ColorTriangle::new(rand::thread_rng().gen_range(0..0xFFFFFF), tri, normal_tri))
         .collect::<Vec<ColorTriangle>>();
 
+    let mut object = Object3D::new(triangles);
+
     let mut camera = Camera::new(Point3D::new(0.0, 0.0, -4.0), Point3D::new(0.0, 0.0, -1.0));
-    let mut light = Light::new(Point3D::new(0.0, 0.0, -0.0));
+    let mut light = Light::new(Point3D::new(2.0, 0.75, -0.5));
 
     let event_loop = EventLoop::new().unwrap();
 
@@ -78,15 +80,13 @@ fn main() {
                     let mut buffer = surface.buffer_mut().unwrap();
 
                     let time = (start.elapsed().as_millis() as f64) / 1000.0;
-                    light.position.x = 2.0 * time.cos();
-                    light.position.y = 0.5;
-                    light.position.z = 2.0 * time.sin();
+                    object.rotation = time;
 
                     let scene = Scene::new(camera, light);
 
                     let mut paint_buffer = PaintBuffer::new(width, height);
-                    triangles.clone().into_iter().for_each(|tri| tri.paint_to_buffer(&mut paint_buffer, scene));
-
+                    object.paint_to_buffer(&mut paint_buffer, scene);
+                    
                     if buffer.len() == paint_buffer.pixel_buffer.len() {
                         buffer.copy_from_slice(&paint_buffer.pixel_buffer);
                         buffer.present().unwrap();

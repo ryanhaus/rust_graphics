@@ -155,6 +155,21 @@ impl Point3D {
     pub fn dot(&self, p: Point3D) -> f64 {
         self.x * p.x + self.y * p.y + self.z * p.z
     }
+
+    pub fn get_translating_point(&self) -> Self {
+        Self::new(-self.x, -self.y, -self.z)
+    }
+
+    pub fn rotated_xz(&self, rotation: f64) -> Self {
+        let magnitude = (self.x.powf(2.0) + self.z.powf(2.0)).sqrt();
+        let theta = self.z.atan2(self.x) + rotation;
+
+        Point3D::new(
+            magnitude * theta.cos(),
+            self.y,
+            magnitude * theta.sin(),
+        )
+    }
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -187,7 +202,7 @@ impl Triangle3D {
 
     pub fn paint_to_buffer<ColorF: Fn(f64, f64, f64) -> u32>(&self, buffer: &mut PaintBuffer, scene: Scene, color_f: ColorF) {
         let Scene(camera, light) = scene;
-        let mut translated_triangle = self.translated_by(camera.get_translating_point());
+        let mut translated_triangle = self.translated_by(camera.position.get_translating_point());
         translated_triangle.a.y *= -1.0;
         translated_triangle.b.y *= -1.0;
         translated_triangle.c.y *= -1.0;
@@ -223,6 +238,14 @@ impl Triangle3D {
                     }
                 }
             }
+        }
+    }
+
+    pub fn rotated_xz(&self, rotation: f64) -> Self {
+        Self {
+            a: self.a.rotated_xz(rotation),
+            b: self.b.rotated_xz(rotation),
+            c: self.c.rotated_xz(rotation),
         }
     }
 }
@@ -284,6 +307,14 @@ impl ColorTriangle {
             (brightness << 16) | (brightness << 8) | brightness
         });
     }
+
+    pub fn translated_by(&self, offset: Point3D) -> Self {
+        Self {
+            tri: self.tri.translated_by(offset),
+            normal_tri: self.normal_tri,
+            color: self.color,
+        }
+    }
 }
 
 pub struct PaintBuffer {
@@ -317,9 +348,6 @@ impl Camera {
         Self { position, view_dir }
     }
 
-    pub fn get_translating_point(&self) -> Point3D {
-        Point3D::new(-self.position.x, -self.position.y, -self.position.z)
-    }
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -340,5 +368,31 @@ pub struct Scene(Camera, Light);
 impl Scene {
     pub fn new(camera: Camera, light: Light) -> Self {
         Self(camera, light)
+    }
+}
+
+pub struct Object3D {
+    pub position: Point3D,
+    pub rotation: f64,
+    pub triangles: Vec<ColorTriangle>,
+}
+
+impl Object3D {
+    pub fn new(triangles: Vec<ColorTriangle>) -> Self {
+        Self {
+            position: Point3D::new(0.0, 0.0, 0.0),
+            rotation: 0.0,
+            triangles
+        }
+    }
+
+    pub fn paint_to_buffer(&self, buffer: &mut PaintBuffer, scene: Scene) {
+        for tri in &self.triangles {
+            let mut tri = tri.translated_by(self.position.get_translating_point());
+            tri.tri = tri.tri.rotated_xz(self.rotation);
+            tri.normal_tri = tri.normal_tri.rotated_xz(self.rotation);
+
+            tri.paint_to_buffer(buffer, scene);
+        }
     }
 }
