@@ -43,6 +43,10 @@ impl Triangle2D {
         (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x)
     }
 
+    pub fn signed_area(&self) -> f64 {
+        2.0 * Triangle2D::edge_function(self.a, self.b, self.c)
+    }
+
     // see https://jtsorlinis.github.io/rendering-tutorial/
     // checks whether or not a point is inside the triangle
     pub fn contains_point(&self, p: Point2D) -> bool {
@@ -96,6 +100,11 @@ impl Triangle2D {
 
     // paints the triangle into a PaintBuffer object
     pub fn paint_to_buffer(&self, buffer: &mut PaintBuffer, paint_value: u32) {
+        // don't even bother with back-facing triangles
+        if self.signed_area() <= 0.0 {
+            return;
+        }
+
         // get bounding box of triangle in this buffer
         let (range_x, range_y) = self.get_bounding_box_px(buffer.width, buffer.height);
 
@@ -180,6 +189,12 @@ impl Triangle3D {
         translated_triangle.c.y *= -1.0;
         let projected_triangle = translated_triangle.project_to_2d();
         let projected_triangle = projected_triangle.translated_by(Point2D::new(0.5, 0.5));
+
+        // don't even bother with back-facing triangles
+        if projected_triangle.signed_area() <= 0.0 {
+            return;
+        }
+
         let (range_x, range_y) = projected_triangle.get_bounding_box_px(buffer.width, buffer.height);
 
         for y in range_y {
