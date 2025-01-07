@@ -29,13 +29,13 @@ fn main() {
         .map(|indices| (indices[0] as usize, indices[1] as usize, indices[2] as usize))
         .map(|(a, b, c)| (vertices[a], vertices[b], vertices[c]))
         .map(|(a, b, c)| (Triangle3D::new(a.0, b.0, c.0), Triangle3D::new(a.1, b.1, c.1)))
-        .map(|(tri, normal_tri)| ColorTriangle::new(rand::thread_rng().gen_range(0..0xFFFFFF), tri, normal_tri))
+        .map(|(tri, normal_tri)| ColorTriangle::new(0xFFFFFF, tri, normal_tri))
         .collect::<Vec<ColorTriangle>>();
 
     let mut object = Object3D::new(triangles);
 
     let mut camera = Camera::new(Point3D::new(0.0, 0.0, -4.0), Point3D::new(0.0, 0.0, -1.0));
-    let mut light = Light::new(Point3D::new(2.0, 0.75, -0.5));
+    let mut light = Light::new(Point3D::new(2.0, 0.75, -0.5), (1.0, 0.0, 0.0));
 
     let event_loop = EventLoop::new().unwrap();
 
@@ -78,13 +78,21 @@ fn main() {
                     let height = u32::from(height);
 
                     let mut buffer = surface.buffer_mut().unwrap();
-
+                    if buffer.len() as u32 != width * height {
+                        return;
+                    }
+                    
                     let time = (start.elapsed().as_millis() as f64) / 1000.0;
                     object.rotation = time;
 
                     let scene = Scene::new(camera, light);
 
                     let mut paint_buffer = PaintBuffer::new(width, height);
+
+                    for i in 0..paint_buffer.pixel_buffer.len() {
+                        paint_buffer.pixel_buffer[i] = 0xFFFFFF; //background color
+                    }
+
                     object.paint_to_buffer(&mut paint_buffer, scene);
                     
                     if buffer.len() == paint_buffer.pixel_buffer.len() {

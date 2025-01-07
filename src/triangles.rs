@@ -303,8 +303,15 @@ impl ColorTriangle {
             brightness += spec_brightness_a * weight_a + spec_brightness_b * weight_b + spec_brightness_c * weight_c; // specular
             brightness = f64::clamp(brightness, 0.0, 1.0);
 
-            let brightness = (brightness * 255.0) as u32;
-            (brightness << 16) | (brightness << 8) | brightness
+            let brightness_r = brightness * light.color.0;
+            let brightness_g = brightness * light.color.1;
+            let brightness_b = brightness * light.color.2;
+
+            let r = (255.0 * brightness_r) as u32;
+            let g = (255.0 * brightness_g) as u32;
+            let b = (255.0 * brightness_b) as u32;
+
+            (r << 16) | (g << 8) | b
         });
     }
 
@@ -353,12 +360,12 @@ impl Camera {
 #[derive(Clone, Copy, Debug)]
 pub struct Light {
     pub position: Point3D,
-    // TODO: color?
+    pub color: (f64, f64, f64),
 }
 
 impl Light {
-    pub fn new(position: Point3D) -> Self {
-        Self { position }
+    pub fn new(position: Point3D, color: (f64, f64, f64)) -> Self {
+        Self { position, color }
     }
 }
 
