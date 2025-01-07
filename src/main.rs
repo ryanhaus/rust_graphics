@@ -32,7 +32,7 @@ fn main() {
         .map(|(tri, normal_tri)| ColorTriangle::new(rand::thread_rng().gen_range(0..0xFFFFFF), tri, normal_tri))
         .collect::<Vec<ColorTriangle>>();
 
-    let camera = Camera::new(Point3D::new(0.0, 0.0, -4.0));
+    let mut camera = Camera::new(Point3D::new(0.0, 0.0, -4.0), Point3D::new(0.0, 0.0, -1.0));
     let mut light = Light::new(Point3D::new(0.0, 0.0, -0.0));
 
     let event_loop = EventLoop::new().unwrap();
@@ -78,9 +78,9 @@ fn main() {
                     let mut buffer = surface.buffer_mut().unwrap();
 
                     let time = (start.elapsed().as_millis() as f64) / 1000.0;
-                    light.position.x = time.cos();
+                    light.position.x = 2.0 * time.cos();
                     light.position.y = 0.5;
-                    light.position.z = time.sin();
+                    light.position.z = 2.0 * time.sin();
 
                     let scene = Scene::new(camera, light);
 

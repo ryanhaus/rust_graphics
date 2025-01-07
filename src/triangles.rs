@@ -151,6 +151,10 @@ impl Point3D {
 
         Point3D::new(self.x / magnitude, self.y / magnitude, self.z / magnitude)
     }
+
+    pub fn dot(&self, p: Point3D) -> f64 {
+        self.x * p.x + self.y * p.y + self.z * p.z
+    }
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -260,11 +264,20 @@ impl ColorTriangle {
         let diff_brightness_b = light_dir_b.x * self.normal_tri.b.x + light_dir_b.y * self.normal_tri.b.y + light_dir_b.z * self.normal_tri.b.z;
         let diff_brightness_c = light_dir_c.x * self.normal_tri.c.x + light_dir_c.y * self.normal_tri.c.y + light_dir_c.z * self.normal_tri.c.z;
 
+        let halfway_dir_a = light_dir_a.translated_by(camera.view_dir).normalized();
+        let halfway_dir_b = light_dir_b.translated_by(camera.view_dir).normalized();
+        let halfway_dir_c = light_dir_c.translated_by(camera.view_dir).normalized();
+
+        let spec_constant = 4.0;
+        let spec_brightness_a = f64::max(self.normal_tri.a.dot(halfway_dir_a), 0.0).powf(spec_constant);
+        let spec_brightness_b = f64::max(self.normal_tri.b.dot(halfway_dir_b), 0.0).powf(spec_constant);
+        let spec_brightness_c = f64::max(self.normal_tri.c.dot(halfway_dir_c), 0.0).powf(spec_constant);
+
         self.tri.paint_to_buffer(buffer, scene, |weight_a, weight_b, weight_c| {
 
             let mut brightness = 0.15; // ambient
             brightness += diff_brightness_a * weight_a + diff_brightness_b * weight_b + diff_brightness_c * weight_c; // diffuse
-            // specular (blinn-phong)
+            brightness += spec_brightness_a * weight_a + spec_brightness_b * weight_b + spec_brightness_c * weight_c; // specular
             brightness = f64::clamp(brightness, 0.0, 1.0);
 
             let brightness = (brightness * 255.0) as u32;
@@ -295,13 +308,13 @@ impl PaintBuffer {
 
 #[derive(Clone, Copy, Debug)]
 pub struct Camera {
-    position: Point3D,
-    // TODO: make orientation of camera as well as FOV etc
+    pub position: Point3D,
+    pub view_dir: Point3D,
 }
 
 impl Camera {
-    pub fn new(position: Point3D) -> Self {
-        Self { position }
+    pub fn new(position: Point3D, view_dir: Point3D) -> Self {
+        Self { position, view_dir }
     }
 
     pub fn get_translating_point(&self) -> Point3D {
