@@ -388,10 +388,10 @@ impl Object3D {
 
     pub fn paint_to_buffer(&self, buffer: &mut PaintBuffer, scene: Scene) {
         for tri in &self.triangles {
-            let mut tri = tri.translated_by(self.position.get_translating_point());
+            let mut tri = tri.clone();
             tri.tri = tri.tri.rotated_xz(self.rotation);
             tri.normal_tri = tri.normal_tri.rotated_xz(self.rotation);
-
+            tri.tri = tri.tri.translated_by(self.position.get_translating_point());
             tri.paint_to_buffer(buffer, scene);
         }
     }
