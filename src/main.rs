@@ -35,7 +35,7 @@ fn main() {
     let mut object = Object3D::new(triangles);
 
     let mut camera = Camera::new(Point3D::new(0.0, 0.0, -4.0), Point3D::new(0.0, 0.0, -1.0));
-    let mut light = Light::new(Point3D::new(2.0, 0.75, -0.5), (1.0, 0.0, 0.0));
+    let mut light = Light::new(Point3D::new(2.0, 0.75, -0.5), (1.0, 0.3, 0.0));
 
     let event_loop = EventLoop::new().unwrap();
 
@@ -90,7 +90,7 @@ fn main() {
                     let mut paint_buffer = PaintBuffer::new(width, height);
 
                     for i in 0..paint_buffer.pixel_buffer.len() {
-                        paint_buffer.pixel_buffer[i] = 0xFFFFFF; //background color
+                        paint_buffer.pixel_buffer[i] = 0x111111; //background color
                     }
 
                     object.paint_to_buffer(&mut paint_buffer, scene);
