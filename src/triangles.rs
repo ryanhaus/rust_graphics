@@ -52,7 +52,6 @@ impl Triangle2D {
     pub fn contains_point(&self, p: Point2D) -> bool {
         let (weight_a, weight_b, weight_c) = self.get_weights_at(p);
 
-        let area = 0.5 * Triangle2D::edge_function(self.a, self.b, self.c);
         weight_a >= 0.0 && weight_b >= 0.0 && weight_c >= 0.0
     }
 
@@ -106,6 +105,11 @@ impl Triangle2D {
         for y in range_y {
             for x in range_x.clone() {
                 let index = (x + y * buffer.width) as usize;
+
+                if index >= buffer.pixel_buffer.len() {
+                    continue;
+                }
+
                 let x = (x as f64) / (buffer.width as f64);
                 let y = (y as f64) / (buffer.height as f64);
                 let p = Point2D::new(x, y);
@@ -113,7 +117,7 @@ impl Triangle2D {
                 buffer.pixel_buffer[index] = if self.contains_point(p) { paint_value } else { 0x000000 };
             }
         }
-    }
+   }
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -202,7 +206,7 @@ impl Triangle3D {
         translated_triangle.c.y *= -1.0;
         let projected_triangle = translated_triangle.project_to_2d();
         let projected_triangle = projected_triangle.translated_by(Point2D::new(0.5, 0.5));
-
+       
         // don't even bother with back-facing triangles
         if projected_triangle.signed_area() <= 0.0 {
             return;
@@ -233,6 +237,7 @@ impl Triangle3D {
                 }
             }
         }
+ 
     }
 
     pub fn rotated_xz(&self, rotation: f64) -> Self {
