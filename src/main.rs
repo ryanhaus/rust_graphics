@@ -16,7 +16,7 @@ use triangles::*;
 fn main() {
     let start = Instant::now();
 
-    let obj_input = BufReader::new(File::open("res/dragon.obj").unwrap());
+    let obj_input = BufReader::new(File::open("res/dragon_lowpoly.obj").unwrap());
     let model: Obj = load_obj(obj_input).unwrap();
 
     let vertices = model.vertices
@@ -34,7 +34,7 @@ fn main() {
 
     let mut object = Object3D::new(triangles);
 
-    let mut camera = Camera::new(Point3D::new(0.0, 0.0, -5.0), Point3D::new(0.0, 0.0, -1.0));
+    let mut camera = Camera::new(Point3D::new(0.0, 1.5, -5.0), Point3D::new(0.0, 0.0, -1.0));
     let mut light = Light::new(Point3D::new(2.0, 0.75, -0.5), (1.0, 0.3, 0.0));
 
     let event_loop = EventLoop::new().unwrap();
